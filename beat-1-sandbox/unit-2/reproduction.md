@@ -15,8 +15,7 @@ label is not graded.
 
 **GitHub username**
 
-[Your GitHub username, exactly as it appears on your profile — no `@`, no profile URL. Your
-comments upstream are identified by this name.]
+Tanya703
 
 ---
 
@@ -54,16 +53,67 @@ explain why your rubric read it that way.]
 
 **Check rationale**
 
-[Quote one check from the `rubric.md` you uploaded to `tools/repro-check/`, exactly as it reads now.
-Then say why it reads that way — what you revised to get there, or what you rejected in
-favour of it.]
+From `rubric.md`, the `artifact-shows-the-issue` row as it now reads:
+
+> | `artifact-shows-the-issue` | The report's artifacts (output excerpts, logs, screenshots, measurements) read against the behavior the issue's description and thread actually report | Either (a) an artifact shows the behavior the issue reports — the same error, the same failure mode, the same exit condition — rather than an adjacent or earlier one; or (b) the report states it could not reproduce and the artifact shows what the attempt produced instead. An artifact showing only that the software runs, or showing a graceful validation, syntax, or compile error where the issue reports a crash or a wrong result, fails. | required |
+
+The `(a) or (b)` disjunction is the whole design of this check, and it
+is what I rejected a simpler version in favour of. The obvious way to
+write it is the single clause: *an artifact shows the behavior the
+issue reports*. That clause is right about every wrong-target and
+no-evidence package — an argument-validation error standing in for a
+capacity crash, a version banner standing in for a blank pane, a root
+cause asserted with no transcript at all — and it is wrong about a
+whole family of packages the eval set deliberately contains. An honest
+cannot-reproduce has no artifact showing the issue's behavior, because
+the behavior did not happen; under the single clause it fails a
+`required` check and the package rejects. But the gold labels treat an
+evidenced cannot-reproduce as `accept`, and the assignment is explicit
+that reporting a failed reproduction faithfully is exactly what the
+reproduce phase is for.
+
+So the check has to ask a different question than "did the bug
+appear?" It asks whether the artifact shows *the thing the report says
+it shows*. Branch (a) is for a report claiming a reproduction; branch
+(b) is for a report claiming it could not get one, where the evidence
+owed is the attempt — the real commands and the real output that came
+back instead. That keeps the three cases the set separates apart:
+branch (b) passes the honest cannot-reproduce, the second sentence
+still fails the artifact that only proves the program ran, and a
+report that claims a reproduction it does not have is caught by branch
+(a) rather than escaping through (b), because (b) requires the report
+to have *stated* it could not reproduce.
 
 **Trade-offs**
 
-[Every check gives something up. Any one of these is a complete answer: a package whose
-result it changes, a canary you re-ran with `--only`, a case you accept it will miss, or a
-stated reason nothing changed elsewhere. "Nothing changed, and here is how I know" earns
-the point in full when the reason follows.]
+`env-deviation-disclosed` is where I accept a real miss. It reads:
+
+> Where the run's version, platform, or configuration differs from
+> what the issue targets, the report says so in its own words.
+
+That condition is satisfied by *mentioning* the deviation. It asks
+nothing about whether the deviation leaves the evidence worth
+anything. So a report that runs an old release against an issue
+confirmed only on `main`, and writes one honest line saying it did
+exactly that, passes a check that exists to catch old-release runs —
+even though the artifact is still evidence about that old version
+rather than about the reported bug.
+
+I accept the miss because the stricter version I considered — requiring
+the report to argue that the deviation does not invalidate the result —
+is a check on the quality of an argument rather than on an observable
+fact, and two graders would not apply it the same way twice. The
+`SKILL.md` grading discipline is explicit that a pass condition has to
+be a rule someone else could apply and get my answer, and "did they
+justify the gap convincingly" is not that rule. It also does not leave
+the case uncovered in practice: a report that runs the wrong version
+and narrates the result as the reported bug still fails
+`artifact-shows-the-issue` and `stated-outcome-matches-evidence`, so
+the package rejects anyway. What genuinely escapes is the narrow case
+of a report that deviates, discloses honestly, and draws no
+conclusion — which is a weak submission but not a dishonest one, and
+holding it is a cost I would rather pay than make the check
+unrepeatable.
 
 ---
 
