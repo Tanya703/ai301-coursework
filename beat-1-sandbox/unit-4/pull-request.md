@@ -15,8 +15,7 @@ label is not graded.
 
 **Pull request**
 
-TODO: paste the PR's URL from codepath/pathreview-ai301-fa26-s3 after opening it
-(https://github.com/codepath/pathreview-ai301-fa26-s3/pull/<number>)
+https://github.com/codepath/pathreview-ai301-fa26-s3/pull/181
 
 **Branch**
 
