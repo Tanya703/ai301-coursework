@@ -105,11 +105,14 @@ exits 0 with a `keyword_index_empty` log line, `search()` after it
 returns `[]`, the three-chunk control ranks the same with score
 0.5108..., and the test file now shows `17 passed`).
 
-One gap in verification: approach step 4 said I'd run `make test-unit`
-and `make lint`. My local venv has only the packages
-`keyword_search.py` needs (`rank-bm25`, `structlog`, `pytest`), so I
-ran the keyword-search test file and `ruff check` / `ruff format
---check` on the two touched files, and both were clean. I didn't
-install the full dependency set. The complete unit suite and the five
-CI jobs will run on the PR, and I'll confirm they pass there before
-asking for review.
+Verification, updated 2026-10-12: when I built the change, my local
+venv had only the packages `keyword_search.py` needs, so I first ran
+just the keyword-search test file and `ruff` on the two touched files.
+Before opening the PR I installed the full dev dependency set
+(`pip install -e ".[dev]"`) and ran all four checks the PR template
+lists: `make test-unit` (376 passed, 52 xfailed, all of them other
+issues' seeded bugs), `make lint` (clean), `make typecheck` (clean),
+and `make test-integration`, which stops with "no tests ran" because
+Path Review has no integration tests yet. That covers approach step 4
+and goes past it: the plan named only `make test-unit` and `make
+lint`. The output is in `test_evidence.md` and the PR description.
