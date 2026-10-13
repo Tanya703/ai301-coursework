@@ -19,7 +19,7 @@ Tanya703
 
 **Plan comment**
 
-TODO: paste the plan comment's permalink here after posting.
+https://github.com/codepath/pathreview-ai301-fa26-s3/issues/68#issuecomment-6137323822
 
 Plan, built from my reproduction above (Windows 11, Python 3.11.9,
 `rank-bm25` 0.2.2, `main@2f4e82f`).

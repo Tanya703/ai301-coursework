@@ -23,16 +23,93 @@ Tanya703
 
 **Claim comment**
 
-[Link to the comment where you claimed the issue. Use the comment's own permalink, not the
-issue page on its own. **Then paste the text of that comment underneath the link** — the
-pasted text is what this field is graded on, so copy across what you actually posted.]
+https://github.com/codepath/pathreview-ai301-fa26-s3/issues/68#issuecomment-6137321232
+
+First contribution here — I'd like to investigate this one.
+
+The asymmetry in the report is what caught my attention: `search()`
+already short-circuits on an empty corpus and returns `[]`, while
+`index()` hands the tokenized corpus straight to `BM25Okapi`. From my
+own BM25 work I'd expect the constructor to divide by the average
+document length while computing IDF, which would leave an empty corpus
+with nothing to average — but that's a guess carried over from my code,
+not something I've traced in this repo yet, so treat it as a hypothesis
+rather than a diagnosis.
+
+Next steps, before I change anything:
+
+1. Reproduce the `ZeroDivisionError` from a clean checkout and record
+   the exact call into `rag/retriever/keyword_search.py` that triggers
+   it, with the full traceback.
+2. Check that the `xfail` test for manifest ID H-01 in
+   `tests/unit/test_keyword_search.py` fails for the reason this issue
+   gives, and not for an unrelated one.
+
+I'll post the reproduction with my environment and the output either
+way — including if it turns out I can't reproduce it. No claim on a fix
+yet; I'd rather report what I actually find first.
 
 **Reproduction comment**
 
-[Link to the comment where you posted your reproduction. It must record the environment
-(OS, relevant versions, code state), steps a stranger could follow, and what you observed.
-**Then paste the text of that comment underneath the link** — the pasted text is what this
-field is graded on, so copy across what you actually posted.]
+https://github.com/codepath/pathreview-ai301-fa26-s3/issues/68#issuecomment-6137322496
+
+Reproduced on a clean checkout. `index([])` raises the `ZeroDivisionError`
+inside `rank_bm25`'s constructor, before `search()` ever runs.
+
+**Environment:** Windows 11 Pro (10.0.22631), Python 3.11.9,
+`rank-bm25` 0.2.2, `structlog` 26.1.0, repo at `main@2f4e82f`. I
+installed only `rank-bm25`, `structlog`, and `pytest` into a fresh venv,
+since `keyword_search.py` imports nothing else.
+
+**Steps** (from the repo root, venv active):
+
+```
+$ python -c "from rag.retriever.keyword_search import KeywordSearcher; KeywordSearcher().index([])"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "D:\pathreview-ai301-fa26-s3\rag\retriever\keyword_search.py", line 25, in index
+    self.bm25 = BM25Okapi(tokenized_corpus)
+  File "...\site-packages\rank_bm25.py", line 83, in __init__
+    super().__init__(corpus, tokenizer)
+  File "...\site-packages\rank_bm25.py", line 27, in __init__
+    nd = self._initialize(corpus)
+  File "...\site-packages\rank_bm25.py", line 52, in _initialize
+    self.avgdl = num_doc / self.corpus_size
+ZeroDivisionError: division by zero
+```
+
+**Controls:**
+
+```
+# search() without ever calling index(): the existing guard returns []
+$ python -c "from rag.retriever.keyword_search import KeywordSearcher; print(KeywordSearcher().search('python', top_k=10))"
+[warning  ] keyword_search_empty_index
+[]
+
+# a non-empty index builds and searches normally
+$ python -c "...; s.index([{'id':1,'text':'python programming'},{'id':2,'text':'java code'},{'id':3,'text':'rust systems'}]); print(s.search('python', top_k=10))"
+[info     ] keyword_index_built            chunk_count=3
+[{'id': 1, 'text': 'python programming', 'bm25_score': 0.5108...}, {'id': 2, ..., 'bm25_score': 0.0}, {'id': 3, ..., 'bm25_score': 0.0}]
+```
+
+**The existing xfail fails for this reason, not another one.** With the
+marker ignored, `test_empty_index` (manifest H-01) fails on the same line:
+
+```
+$ python -m pytest tests/unit/test_keyword_search.py -k empty_index --runxfail
+E       ZeroDivisionError: division by zero
+.venv\Lib\site-packages\rank_bm25.py:52: ZeroDivisionError
+FAILED tests/unit/test_keyword_search.py::TestKeywordSearcher::test_empty_index
+```
+
+The rest of that file passes (`16 passed, 1 xfailed`).
+
+Expected: `index([])` leaves an empty index, and `search()` returns
+`[]`, the same as it already does when `index()` was never called.
+Actual: the crash happens in `index()` itself, because `BM25Okapi`
+computes the average document length as `num_doc / corpus_size` with
+`corpus_size == 0`. That matches the hypothesis in my claim, now traced
+rather than guessed. I'll post a plan next.
 
 ## Eval iterations
 
